@@ -2,7 +2,7 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <MenuSystem.h>
+#include "MenuSystem.h"
 
  
 Adafruit_SSD1306 display = Adafruit_SSD1306();
@@ -120,8 +120,11 @@ void on_item3_selected(MenuItem* p_menu_item)
 
 
 void setup() {  
-  Serial.begin(9600);
- 
+  while (!Serial);  // required for Flora & Micro
+  delay(500);
+
+  Serial.begin(115200);
+  
   Serial.println("OLED FeatherWing test");
   // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
@@ -143,8 +146,6 @@ void setup() {
   ms.get_root_menu().add_menu(&mu1);
   mu1.add_item(&mu1_mi1);
 
-  
-  
   Serial.println("IO test");
  
   pinMode(BUTTON_A, INPUT_PULLUP);
@@ -154,17 +155,10 @@ void setup() {
   // text display tests
   display.setTextSize(2);
   display.setTextColor(WHITE);
-  /*display.setCursor(0,0);
-  display.print("Connecting to SSID\n'adafruit':");
-  display.print("connected!");
-  display.println("IP: 10.0.1.23");
-  display.println("Sending val #0");
-  display.setCursor(0,0);*/
   ms.display();
   display.display(); // actually display all of the above
 }
- 
- 
+
 void loop() {
   if (! digitalRead(BUTTON_A))
   {
