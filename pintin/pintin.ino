@@ -2,8 +2,8 @@
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include "MenuSystem.h"
-
+#include <MenuSystem.h>
+#include <FlashStorage.h>
  
 Adafruit_SSD1306 display = Adafruit_SSD1306();
  
@@ -32,6 +32,18 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
 #if (SSD1306_LCDHEIGHT != 32)
  #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
+
+
+
+FlashStorage(my_flash_store, int);
+
+extern "C" char *sbrk(int i);
+ 
+int FreeRam () {
+  char stack_dummy = 0;
+  return &stack_dummy - sbrk(0);
+}
+
 
 class MyRenderer : public MenuComponentRenderer
 {
@@ -104,7 +116,13 @@ void on_item2_selected(MenuItem* p_menu_item)
 {
   display.clearDisplay();
   display.setCursor(0,1);
-  display.print("Nothing\r\nhere");
+  display.println(FreeRam ());
+  int number;
+
+  // Read the content of "my_flash_store" and assign it to "number"
+  number = my_flash_store.read();
+  display.println(number);
+  //display.print("test:");
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -120,7 +138,6 @@ void on_item3_selected(MenuItem* p_menu_item)
 
 
 void setup() {  
-  while (!Serial);  // required for Flora & Micro
   delay(500);
 
   Serial.begin(115200);
@@ -157,6 +174,18 @@ void setup() {
   display.setTextColor(WHITE);
   ms.display();
   display.display(); // actually display all of the above
+
+    int number;
+
+  // Read the content of "my_flash_store" and assign it to "number"
+  number = my_flash_store.read();
+
+  // Print the current number on the serial monitor
+  Serial.println(number);
+
+  // Save into "my_flash_store" the number increased by 1 for the
+  // next run of the sketch
+  my_flash_store.write(number + 1);
 }
 
 void loop() {
