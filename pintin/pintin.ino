@@ -34,6 +34,8 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
  #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
+FlashStorage(my_flash_store, int);
+
 extern "C" char *sbrk(int i);
  
 int FreeRam () {
@@ -105,7 +107,11 @@ void on_item1_selected(MenuItem* p_menu_item)
 {
   display.clearDisplay();
   display.setCursor(0,1);
-  display.print("Password:");
+    int number;
+
+  // Read the content of "my_flash_store" and assign it to "number"
+  number = my_flash_store.read();
+  display.print(number);
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -115,6 +121,11 @@ void on_item2_selected(MenuItem* p_menu_item)
   display.clearDisplay();
   display.setCursor(0,1);
   display.print(entry[1].title);
+      int number;
+
+  // Read the content of "my_flash_store" and assign it to "number"
+  number = my_flash_store.read();
+  my_flash_store.write(number + 1);
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -143,6 +154,16 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
   // init done
   Serial.println("OLED begun");
+
+  Serial.println("OLED FeatherWing test");
+
+
+  // Print the current number on the serial monitor
+  //Serial.println(number);
+
+  // Save into "my_flash_store" the number increased by 1 for the
+  // next run of the sketch
+  my_flash_store.write(1);
 
   // Show image buffer on the display hardware.
   // Since the buffer is intialized with an Adafruit splashscreen
