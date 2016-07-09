@@ -4,6 +4,7 @@
 #include <Adafruit_SSD1306.h>
 #include <MenuSystem.h>
 #include <FlashStorage.h>
+#include "database.h"
  
 Adafruit_SSD1306 display = Adafruit_SSD1306();
  
@@ -32,10 +33,6 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
 #if (SSD1306_LCDHEIGHT != 32)
  #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
-
-
-
-FlashStorage(my_flash_store, int);
 
 extern "C" char *sbrk(int i);
  
@@ -98,8 +95,9 @@ void on_item3_selected(MenuItem* p_menu_item);
 MenuSystem ms(my_renderer);
 MenuItem mm_mi1("Login", &on_item1_selected);
 MenuItem mm_mi2("Settings", &on_item2_selected);
-Menu mu1("Test");
-MenuItem mu1_mi1("Test3", on_item3_selected);
+MenuItem mm_mi3("Info", &on_item3_selected);
+/*Menu mu1("Test");
+MenuItem mu1_mi1("Test3", on_item3_selected);*/
 
 // Menu callback function
 
@@ -116,13 +114,7 @@ void on_item2_selected(MenuItem* p_menu_item)
 {
   display.clearDisplay();
   display.setCursor(0,1);
-  display.println(FreeRam ());
-  int number;
-
-  // Read the content of "my_flash_store" and assign it to "number"
-  number = my_flash_store.read();
-  display.println(number);
-  //display.print("test:");
+  display.print(entry[1].title);
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -131,7 +123,11 @@ void on_item3_selected(MenuItem* p_menu_item)
 {
   display.clearDisplay();
   display.setCursor(0,1);
-  display.print("Huh?");
+  display.println(FreeRam ());
+
+  // Read the content of "my_flash_store" and assign it to "number"
+  //number = my_flash_store.read();
+  //display.println(number);
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -147,7 +143,7 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
   // init done
   Serial.println("OLED begun");
-  
+
   // Show image buffer on the display hardware.
   // Since the buffer is intialized with an Adafruit splashscreen
   // internally, this will display the splashscreen.
@@ -160,8 +156,8 @@ void setup() {
 
   ms.get_root_menu().add_item(&mm_mi1);
   ms.get_root_menu().add_item(&mm_mi2);
-  ms.get_root_menu().add_menu(&mu1);
-  mu1.add_item(&mu1_mi1);
+  ms.get_root_menu().add_item(&mm_mi3);
+ // mu1.add_item(&mu1_mi1);
 
   Serial.println("IO test");
  
@@ -175,17 +171,17 @@ void setup() {
   ms.display();
   display.display(); // actually display all of the above
 
-    int number;
+ /* LoginEntryStorage storage;
 
   // Read the content of "my_flash_store" and assign it to "number"
-  number = my_flash_store.read();
+  storage = mySecureStorage.read();
 
   // Print the current number on the serial monitor
-  Serial.println(number);
+  //Serial.println(number);
 
   // Save into "my_flash_store" the number increased by 1 for the
   // next run of the sketch
-  my_flash_store.write(number + 1);
+  //my_flash_store.write(number + 1);*/
 }
 
 void loop() {
