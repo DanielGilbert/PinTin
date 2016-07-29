@@ -3,11 +3,13 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <MenuSystem.h>
-#include <FlashStorage.h>
 #include "database.h"
+#include <AES.h>
  
 Adafruit_SSD1306 display = Adafruit_SSD1306();
- 
+
+#include "menu.h"
+
 #if defined(ESP8266)
   #define BUTTON_A 0
   #define BUTTON_B 16
@@ -34,8 +36,6 @@ Adafruit_SSD1306 display = Adafruit_SSD1306();
  #error("Height incorrect, please fix Adafruit_SSD1306.h!");
 #endif
 
-FlashStorage(my_flash_store, int);
-
 extern "C" char *sbrk(int i);
  
 int FreeRam () {
@@ -43,6 +43,14 @@ int FreeRam () {
   return &stack_dummy - sbrk(0);
 }
 
+AES aes ;
+
+byte *key = (unsigned char*)"0123456789010123";
+
+byte plain[] = "Add NodeAdd NodeAdd NodeAdd NodeAdd Node";
+
+//real iv = iv x2 ex: 01234567 = 0123456701234567
+unsigned long long int my_iv = 36753562;
 
 class MyRenderer : public MenuComponentRenderer
 {
@@ -85,6 +93,57 @@ public:
         display.display(); 
     }
 };
+
+void prekey (int bits)
+{
+  aes.iv_inc();
+  byte iv [N_BLOCK] ;
+  byte plain_p[48];
+  byte cipher [48] ;
+  byte check [48] ;
+  unsigned long ms = micros ();
+  aes.set_IV(my_iv);
+  aes.get_IV(iv);
+  aes.do_aes_encrypt(plain,41,cipher,key,bits,iv);
+  Serial.print("Encryption took: ");
+  Serial.println(micros() - ms);
+  ms = micros ();
+  aes.set_IV(my_iv);
+  aes.get_IV(iv);
+  aes.do_aes_decrypt(cipher,48,check,key,bits,iv);
+  Serial.print("Decryption took: ");
+  Serial.println(micros() - ms);
+  Serial.println("\n\nPLAIN :");
+  aes.printArray(plain,(bool)true);
+  for(int i = 0; i < sizeof(plain); i++)
+  {
+  Serial.println(plain[i]);
+  }
+  Serial.println("\nCIPHER:");
+  for(int i = 0; i < 48; i++)
+  {
+  Serial.println(cipher[i]);
+  }
+  Serial.println("\nCHECK :");
+  for(int i = 0; i < 48; i++)
+  {
+  Serial.println(check[i]);
+  }
+  Serial.println("\nIV    :");
+  for(int i = 0; i < N_BLOCK; i++)
+  {
+  Serial.println(iv[i]);
+  }
+  Serial.println("\n============================================================\n");
+}
+
+void prekey_test ()
+{
+  prekey (128) ;
+}
+
+
+
 MyRenderer my_renderer;
 // Forward declarations
 
@@ -93,8 +152,8 @@ void on_item2_selected(MenuItem* p_menu_item);
 void on_item3_selected(MenuItem* p_menu_item);
 
 // Menu variables
-
 MenuSystem ms(my_renderer);
+
 MenuItem mm_mi1("Login", &on_item1_selected);
 MenuItem mm_mi2("Settings", &on_item2_selected);
 MenuItem mm_mi3("Info", &on_item3_selected);
@@ -107,11 +166,7 @@ void on_item1_selected(MenuItem* p_menu_item)
 {
   display.clearDisplay();
   display.setCursor(0,1);
-    int number;
-
-  // Read the content of "my_flash_store" and assign it to "number"
-  number = my_flash_store.read();
-  display.print(number);
+  display.print(1);
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -121,11 +176,6 @@ void on_item2_selected(MenuItem* p_menu_item)
   display.clearDisplay();
   display.setCursor(0,1);
   display.print(entry[1].title);
-      int number;
-
-  // Read the content of "my_flash_store" and assign it to "number"
-  number = my_flash_store.read();
-  my_flash_store.write(number + 1);
   display.display();
   delay(1500); // so we can look the result on the LCD
 }
@@ -135,7 +185,7 @@ void on_item3_selected(MenuItem* p_menu_item)
   display.clearDisplay();
   display.setCursor(0,1);
   display.println(FreeRam ());
-
+prekey_test() ;
   // Read the content of "my_flash_store" and assign it to "number"
   //number = my_flash_store.read();
   //display.println(number);
@@ -154,7 +204,6 @@ void setup() {
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x32)
   // init done
   Serial.println("OLED begun");
-
   Serial.println("OLED FeatherWing test");
 
 
@@ -163,7 +212,6 @@ void setup() {
 
   // Save into "my_flash_store" the number increased by 1 for the
   // next run of the sketch
-  my_flash_store.write(1);
 
   // Show image buffer on the display hardware.
   // Since the buffer is intialized with an Adafruit splashscreen
@@ -191,18 +239,6 @@ void setup() {
   display.setTextColor(WHITE);
   ms.display();
   display.display(); // actually display all of the above
-
- /* LoginEntryStorage storage;
-
-  // Read the content of "my_flash_store" and assign it to "number"
-  storage = mySecureStorage.read();
-
-  // Print the current number on the serial monitor
-  //Serial.println(number);
-
-  // Save into "my_flash_store" the number increased by 1 for the
-  // next run of the sketch
-  //my_flash_store.write(number + 1);*/
 }
 
 void loop() {
